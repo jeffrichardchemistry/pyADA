@@ -226,14 +226,14 @@ class ApplicabilityDomain:
                 similarities['Sample_test_{}'.format(n)] = np.array(get_tests_similarities)
                 get_tests_similarities = []
                     
-        self._similarities_table = pd.DataFrame(similarities)
+        self.similarities_table_ = pd.DataFrame(similarities)
         
         
-        analyze = pd.concat([self._similarities_table.mean(),
-                             self._similarities_table.median(),
-                             self._similarities_table.std(),
-                             self._similarities_table.max(),
-                             self._similarities_table.min()],
+        analyze = pd.concat([self.similarities_table_.mean(),
+                             self.similarities_table_.median(),
+                             self.similarities_table_.std(),
+                             self.similarities_table_.max(),
+                             self.similarities_table_.min()],
                              axis=1)        
         analyze.columns = ['Mean', 'Median', 'Std', 'Max', 'Min']
         
@@ -359,8 +359,6 @@ class ApplicabilityDomain:
         total_thresholds = np.arange(threshold_step[0], threshold_step[1], threshold_step[2])
         
         if self.__verbose:
-            print('\nComplete similarity analysis step.')
-            print('Scan step starting ...')
             
             for thresholds in tqdm(total_thresholds):
                 samples_GT_threshold = table_anal.loc[table_anal[thref] >= thresholds] #get just samples > threshold
