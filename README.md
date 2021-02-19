@@ -1,5 +1,5 @@
 # pyADA
-pyADA ia a cheminformatics package to perform Applicability Domain of molecular fingerprints based in similarity calculation.
+pyADA is a cheminformatics package to perform Applicability Domain of molecular fingerprints based in similarity calculation.
 In this case, the calculation of the Applicability Domain consists of a scan of similarities of the structures
 present in the test set in relation to the training set, the best similarity threshold is the one with the lowest
 error and also the lowest number of molecules with similarity below the threshold. 
