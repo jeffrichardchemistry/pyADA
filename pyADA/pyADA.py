@@ -3,6 +3,7 @@ from numpy import log, e
 from math import sqrt
 import pandas as pd
 from tqdm import tqdm
+from sklearn.metrics import roc_curve, auc, matthews_corrcoef, accuracy_score
 
 class Smetrics:
     def __init__(self):
@@ -238,12 +239,12 @@ class ApplicabilityDomain:
         analyze.columns = ['Mean', 'Median', 'Std', 'Max', 'Min']
         
         return analyze
-        
+            
     
     def fit(self, model_sklearn, base_test, base_train, y_true,
             threshold_reference = 'max', threshold_step = (0, 1, 0.05),
-            similarity_metric='tanimoto', alpha = 1, beta = 1,
-            metric_error='rmse'):
+            similarity_metric='tanimoto', alpha = 1, beta = 1, metric_avaliation='rmse'):
+        
         
         """
         Performs a scan of the similarities between the compounds
@@ -330,10 +331,14 @@ class ApplicabilityDomain:
             The default metric is tanimoto index.
             The alpha and beta parameters are only for 'tversky' metric.
         
-        metric_error
-            Desired metric to perform the error calculation. The options are:
-            'rmse', 'mse' and 'mae'.
-            The default metric is 'rmse'
+        metric_avaliation
+            Desired metric to perform the error, correlation or accuracy calculation. The options are:
+            'rmse', 'mse' and 'mae', 'mcc', 'acc', auc.
+            
+            Use 'rmse', 'mse or 'mae' for regression problems and 'mcc', 'acc' or 'auc' for binary classification problems.
+            
+            mcc -> matthews correlation coefficient; acc -> accuracy; auc -> area under the curve.
+            
             
         """
         
@@ -370,14 +375,22 @@ class ApplicabilityDomain:
                 new_ypred = model_sklearn.predict(new_xitest) #precit y_pred
                 new_ytrue = y_true[samples_GT_threshold.index] #get y_true (same index of xi_test) (y_true must be a array 1D in this case)
                 
-                #calc of ERROR METRICS (EX: RMSE)
-                if metric_error == 'rmse':
+                #calc of ERROR METRICS (EX: RMSE) or correlation methods
+                if metric_avaliation == 'rmse':
                     error_ = self.__smetrics.roots_mean_square_error(y_true=new_ytrue, y_pred=new_ypred)
-                elif metric_error == 'mse':
+                elif metric_avaliation == 'mse':
                     error_ = self.__smetrics.mean_square_error(y_true=new_ytrue, y_pred=new_ypred)
-                elif metric_error == 'mae':
+                elif metric_avaliation == 'mae':
                     error_ = self.__smetrics.mean_absolute_error(y_true=new_ytrue, y_pred=new_ypred)
-                
+                elif metric_avaliation == 'mcc':
+                    error_ = matthews_corrcoef(y_true=new_ytrue, y_pred=new_ypred)
+                elif metric_avaliation == 'acc':
+                    error_ = accuracy_score(y_true=new_ytrue, y_pred=new_ypred)
+                elif metric_avaliation == 'auc':
+                    new_yproba = model_sklearn.predict_proba(new_xitest)
+                    fp, tp, _ = roc_curve(new_ytrue, new_yproba[:, 1])
+                    error_ = auc(fp, tp)
+                    
                 results['Threshold {}'.format(thresholds.round(5))] = [[error_],np.array(samples_LT_threshold.index)]
                 
             return results
@@ -386,48 +399,75 @@ class ApplicabilityDomain:
             for thresholds in total_thresholds:
                 samples_GT_threshold = table_anal.loc[table_anal[thref] >= thresholds] #get just samples > threshold
                 if len(samples_GT_threshold) == 0:
-                    print('Stopping with Threshold {}. All similarities are less than or equal {} '.format(thresholds, thresholds))
+                    print('\nStopping with Threshold {}. All similarities are less than or equal {} '.format(thresholds, thresholds))
                     break
                 samples_LT_threshold = table_anal.loc[table_anal[thref] < thresholds] #get just samples < threshold
                 new_xitest = base_test[samples_GT_threshold.index, :] #get samples > threshold in complete base_test
                 new_ypred = model_sklearn.predict(new_xitest) #precit y_pred
                 new_ytrue = y_true[samples_GT_threshold.index] #get y_true (same index of xi_test) (y_true must be a array 1D in this case)
                 
-                #calc of ERROR METRICS (EX: RMSE)
-                if metric_error == 'rmse':
+                #calc of ERROR METRICS (EX: RMSE) or correlation methods
+                if metric_avaliation == 'rmse':
                     error_ = self.__smetrics.roots_mean_square_error(y_true=new_ytrue, y_pred=new_ypred)
-                elif metric_error == 'mse':
+                elif metric_avaliation == 'mse':
                     error_ = self.__smetrics.mean_square_error(y_true=new_ytrue, y_pred=new_ypred)
-                elif metric_error == 'mae':
+                elif metric_avaliation == 'mae':
                     error_ = self.__smetrics.mean_absolute_error(y_true=new_ytrue, y_pred=new_ypred)
-                
+                elif metric_avaliation == 'mcc':
+                    error_ = matthews_corrcoef(y_true=new_ytrue, y_pred=new_ypred)
+                elif metric_avaliation == 'acc':
+                    error_ = accuracy_score(y_true=new_ytrue, y_pred=new_ypred)
+                elif metric_avaliation == 'auc':
+                    new_yproba = model_sklearn.predict_proba(new_xitest)
+                    fp, tp, _ = roc_curve(new_ytrue, new_yproba[:, 1])
+                    error_ = auc(fp, tp)
+                    
                 results['Threshold {}'.format(thresholds.round(5))] = [[error_],np.array(samples_LT_threshold.index)]
                 
             return results
         
+"""
+if __name__ == '__main__':
     
-"""if __name__ == '__main__':
     from sklearn.ensemble import RandomForestRegressor
+    from sklearn.ensemble import RandomForestClassifier
+    from sklearn.model_selection import train_test_split
+    from sklearn.metrics import roc_curve, auc
+    from sklearn.preprocessing import LabelEncoder
+
     import pandas as pd
-    path_train = '/dados/ShareGDrive/MachineLearningRateConstant/dados/kOH_RC_FP.csv'
-    df = pd.read_csv(path_train)
-    df_train = df.iloc[:500, 2:]
-    df_test = df.iloc[500:, 2:]
-    xi_train = df_train.iloc[:, 1:].values
-    y_train = df_train.iloc[:, 0].values
-    xi_test = df_test.iloc[:, 1:].values
-    y_test = df_test.iloc[:, 0].values
-    rlr = RandomForestRegressor(n_estimators=150, n_jobs=5)
-    rlr.fit(xi_train, y_train)
+    ## Regression
+    #path_train = '/dados/ShareGDrive/MachineLearningRateConstant/dados/kOH_RC_FP.csv'
+    #df = pd.read_csv(path_train)
+    #df_train = df.iloc[:500, 2:]
+    #df_test = df.iloc[500:, 2:]
+    #xi_train = df_train.iloc[:, 1:].values
+    #y_train = df_train.iloc[:, 0].values
+    #xi_test = df_test.iloc[:, 1:].values
+    #y_test = df_test.iloc[:, 0].values
+    #rlr = RandomForestRegressor(n_estimators=150, n_jobs=5)
+    #rlr.fit(xi_train, y_train)
     #rlr.predict([xi_test[0]])
     #y_pred = rlr.predict(xi_test)
     
-    ad3 = ApplicabilityDomain(verbose=False)
-    get = ad3.fit(model_sklearn=rlr, base_test=xi_test, base_train=xi_train, y_true=y_test,
-                  threshold_step=(0, 1, 0.1), threshold_reference='max',
-                  metric_error='rmse', similarity_metric='tanimoto', alpha=2, beta=1)
-    """
+    ## Classification
+    le = LabelEncoder()
+    path = '/data/banco_de_dados/Machine_Learning_UCI/qsar_toxicitydrugs/qsar_oral_toxicity.csv'
+    df = pd.read_csv(path, sep=';', header=None)    
+    xi = df.iloc[:, 0:1024].values
+    y = df.iloc[:, 1024].values
+    y = le.fit_transform(y)
 
+    xi_train, xi_test, y_train, y_test = train_test_split(xi, y, test_size=0.05, random_state=0)    
+    rfc = RandomForestClassifier(n_estimators=100, n_jobs=10, random_state=0)
+    rfc.fit(xi_train, y_train)
+
+    ad3 = ApplicabilityDomain(verbose=True)
+    get = ad3.fit(model_sklearn=rfc,base_test=xi_test, base_train=xi_train, y_true=y_test,
+                  threshold_step=(0, 1, 0.1), threshold_reference='max',
+                  metric_avaliation='auc', similarity_metric='tanimoto', alpha=2, beta=1)
+    
+"""
 
 
 
