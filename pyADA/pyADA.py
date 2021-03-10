@@ -11,25 +11,46 @@ class Smetrics:
         self.mindata = None
     
     def rescale_norm(self, data):
+        """
+        Perform a normalization rescale to range [0, 1]. The maximum and minimum
+        values can be accessed in Smetrics.maxdata and SMetrics.mindata respectively.
+        """
         self.maxdata = max(data)
         self.mindata = min(data)
+        data = np.array(data)
         sdata = ((data - min(data)) / (max(data) - min(data)))
         return sdata
         
     def back_normrescale(self, data):
+        """
+        Back rescale to normal data.
+        """
+        data = np.array(data)
         bsdata = (data*(self.maxdata - self.mindata) + self.mindata)
         return bsdata
     
     def rescale_ln(self, data):
+        """
+        Apply ln function in a set of data
+        """
+        data = np.array(data)
         return log(data)
     
     def back_lnrescale(self, data):
+        """
+        Back ln values to the original data.
+        """
+        data = np.array(data)
         return e**(data)
     
     def absolute_relative_error(self, y_true, y_pred):
+        y_true = np.array(y_true)
+        y_pred = np.array(y_pred)
         return np.absolute(y_true - y_pred) / y_true
     
     def mean_absolute_error(self, y_true, y_pred):
+        y_true = np.array(y_true)
+        y_pred = np.array(y_pred)
         return sum( (np.absolute(y_true - y_pred)) / (len(y_true)) )
     
     def mean_square_error(self, y_true, y_pred):
@@ -40,15 +61,38 @@ class Smetrics:
     def roots_mean_square_error(self, y_true, y_pred):
         return sqrt(Smetrics.mean_square_error(self, y_true=y_true, y_pred=y_pred))
     
-    def q2(self, y_true, y_pred, y_train):
+    def Q2ext(self, y_true, y_pred, y_train):
+        """
+        Correlation coefficient of external validation. Also known as external explained variance
+        or prediction power of model.
+        """
+        y_true = np.array(y_true)
+        y_pred = np.array(y_pred)
+        y_train = np.array(y_train)
         q2calc = 1 - ((sum((y_true - y_pred)**2)) / (sum((y_true - np.mean(y_train))**2)))
         return q2calc
     
     def R2ext(self, y_true, y_pred):
+        """
+        Correlation coefficient of multiple determination. Also known as coefficient
+        of multiple determination, multiple correlation coefficient and explained
+        variance in fitting.
+        """
+        y_true = np.array(y_true)
+        y_pred = np.array(y_pred)
         R2calc = 1 - ((sum((y_true - y_pred)**2)) / (sum((y_true - np.mean(y_true))**2)))
         return R2calc
     
-    def q2int(self, y_true, y_pred):
+    def Q2int(self, y_true, y_pred):
+        """
+        Crossvalidated correlation coefficient. Also known as (LOO or LNO)
+        crossvalidated correlation coefficient, explained variance in prediction,
+        (LOO or LNO) crossvalidated explained variance,and explained variance by
+        LOO or by LNO. The attributes LOO and LNO are frequently omitted in names
+        for this correlation coefficient.
+        """
+        y_true = np.array(y_true)
+        y_pred = np.array(y_pred)
         q2int = 1 - ((sum((y_true - y_pred)**2)) / (sum((y_true - np.mean(y_true))**2)))
         return q2int
 
@@ -67,7 +111,7 @@ class Similarity:
         AnB = A & B #intersection
         onlyA = np.array(B) < np.array(A) #A is a subset of B
         onlyB = np.array(A) < np.array(B) #B is a subset of A
-        AuB_0s = A | B #Uniao (for count de remain zeros)
+        AuB_0s = A | B #Union (for count de remain zeros)
         
         return AnB,onlyA,onlyB,np.count_nonzero(AuB_0s==0)
     
@@ -257,10 +301,12 @@ class ApplicabilityDomain:
         to a string (threshold value), and the value corresponds to a
         list where the first position refers to the error value and the
         second position corresponds to the positions (index) of the
-        fingerprints in the test-set <= threshold. To perform the error calculation,
+        fingerprints in the test-set <= threshold. To perform the
+        error/correlation calculation,
         it is necessary to predict the values of the class (y_pred),
         so this function interacts with the models created in the
-        scikit-learn package.
+        scikit-learn and xgboost packages. Futures packages of ML
+        that perform like scikit-learn maybe works.
         
         Example of use
             >>> rlr = RandomForestRegressor(n_estimators=150, n_jobs=5) #create sklearn model
@@ -333,7 +379,7 @@ class ApplicabilityDomain:
         
         metric_avaliation
             Desired metric to perform the error, correlation or accuracy calculation. The options are:
-            'rmse', 'mse' and 'mae', 'mcc', 'acc', auc.
+            'rmse', 'mse', 'mae', 'mcc', 'acc' and 'auc'.
             
             Use 'rmse', 'mse or 'mae' for regression problems and 'mcc', 'acc' or 'auc' for binary classification problems.
             
