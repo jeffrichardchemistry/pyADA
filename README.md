@@ -1,3 +1,6 @@
+[![DOI](https://zenodo.org/badge/340351316.svg)](https://zenodo.org/badge/latestdoi/340351316)
+
+
 # pyADA
 pyADA (Python Applicability Domain Analyzer) is a cheminformatics package to perform Applicability Domain of molecular fingerprints based in similarity calculation.
 In this case, the calculation of the Applicability Domain consists of a scan of similarities of the structures
