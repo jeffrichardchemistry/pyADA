@@ -9,6 +9,8 @@ A notebook file with an example of using this package is present in the director
 <li><b>numpy</b></li>
 <li><b>pandas</b></li>
 <li><b>tqdm</b></li>
+<li><b>scikit-learn</b></li>
+<li><b>Tested in python3.6 and python3.8</b></li>
 </ul>
 
 ## Install
@@ -25,7 +27,7 @@ python3 setup.py install
 ```
 
 ## How to use
-This package has three classes: Smetrics (perform some statistical parameters like Q2ext R2ext etc), Similarity (realize similarity calculations based in differents metrics ) and ApplicabilityDomain (run a scan of AD with differents thresholds). The line code bellow import all classes
+This package has three classes: Smetrics (perform some statistical parameters like Q2ext R2ext etc), Similarity (realize similarity calculations based in differents metrics ) and ApplicabilityDomain (run a scan of AD with differents thresholds). The line code bellow import all classes.
 ```
 from pyADA import Smetrics, Similarity, ApplicabilityDomain
 ```
