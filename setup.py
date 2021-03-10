@@ -4,7 +4,7 @@ with open("README.md", 'r') as fr:
 	description = fr.read()
 
 setup(
-    name='pyADA',
+    name='pyADAqsar',
     version='1.0.0',
     url='https://github.com/jeffrichardchemistry/pyADA',
     license='GNU GPL',
