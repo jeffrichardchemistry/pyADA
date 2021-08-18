@@ -285,7 +285,7 @@ class ApplicabilityDomain:
         return analyze
             
     
-    def fit(self, model_sklearn, base_test, base_train, y_true,
+    def fit(self, model, base_test, base_train, y_true, isTensorflow=False,
             threshold_reference = 'max', threshold_step = (0, 1, 0.05),
             similarity_metric='tanimoto', alpha = 1, beta = 1, metric_avaliation='rmse'):
         
@@ -312,7 +312,7 @@ class ApplicabilityDomain:
             >>> rlr = RandomForestRegressor(n_estimators=150, n_jobs=5) #create sklearn model
             >>> rlr.fit(xi_train, y_train) #training model
             >>> AD = ApplicabilityDomain()
-            >>> AD.fit(model_sklearn=rlr, base_test=xi_test, base_train=xi_train, y_true=y_test,
+            >>> AD.fit(model=rlr, base_test=xi_test, base_train=xi_train, y_true=y_test,
                   threshold_step=(0, 0.035, 0.005), threshold_reference='average',
                   metric_error='rmse')
             {'Threshold 0.0': [[5212831353.552006], array([], dtype=int64)],
@@ -326,7 +326,7 @@ class ApplicabilityDomain:
             
         Arguments
         ---------------------
-        model_sklearn
+        model
             Model trained in scikit-learn package
             
                 Example
@@ -418,8 +418,15 @@ class ApplicabilityDomain:
                     break
                 samples_LT_threshold = table_anal.loc[table_anal[thref] < thresholds] #get just samples < threshold
                 new_xitest = base_test[samples_GT_threshold.index, :] #get samples > threshold in complete base_test
-                new_ypred = model_sklearn.predict(new_xitest) #precit y_pred
+                if isTensorflow:
+                    new_ypred = model.predict(new_xitest) #precit y_pred
+                    new_ypred[new_ypred <= 0.5] = 0
+                    new_ypred[new_ypred > 0.5] = 1
+                    new_ypred = new_ypred.astype(int)
+                else:
+                    new_ypred = model.predict(new_xitest) #precit y_pred
                 new_ytrue = y_true[samples_GT_threshold.index] #get y_true (same index of xi_test) (y_true must be a array 1D in this case)
+                
                 
                 #calc of ERROR METRICS (EX: RMSE) or correlation methods
                 if metric_avaliation == 'rmse':
@@ -429,13 +436,18 @@ class ApplicabilityDomain:
                 elif metric_avaliation == 'mae':
                     error_ = self.__smetrics.mean_absolute_error(y_true=new_ytrue, y_pred=new_ypred)
                 elif metric_avaliation == 'mcc':
-                    error_ = matthews_corrcoef(y_true=new_ytrue, y_pred=new_ypred)
+                    error_ = matthews_corrcoef(y_true=new_ytrue.ravel(), y_pred=new_ypred.ravel())
                 elif metric_avaliation == 'acc':
                     error_ = accuracy_score(y_true=new_ytrue, y_pred=new_ypred)
                 elif metric_avaliation == 'auc':
-                    new_yproba = model_sklearn.predict_proba(new_xitest)
-                    fp, tp, _ = roc_curve(new_ytrue, new_yproba[:, 1])
-                    error_ = auc(fp, tp)
+                    if isTensorflow:
+                        new_yproba = model.predict(new_xitest)                        
+                        fp, tp, _ = roc_curve(new_ytrue, new_yproba)
+                        error_ = auc(fp, tp)
+                    else:
+                        new_yproba = model.predict_proba(new_xitest)                        
+                        fp, tp, _ = roc_curve(new_ytrue, new_yproba[:, 1])
+                        error_ = auc(fp, tp)
                     
                 results['Threshold {}'.format(thresholds.round(5))] = [[error_],np.array(samples_LT_threshold.index)]
                 
@@ -449,7 +461,13 @@ class ApplicabilityDomain:
                     break
                 samples_LT_threshold = table_anal.loc[table_anal[thref] < thresholds] #get just samples < threshold
                 new_xitest = base_test[samples_GT_threshold.index, :] #get samples > threshold in complete base_test
-                new_ypred = model_sklearn.predict(new_xitest) #precit y_pred
+                if isTensorflow:
+                    new_ypred = model.predict(new_xitest) #precit y_pred
+                    new_ypred[new_ypred <= 0.5] = 0
+                    new_ypred[new_ypred > 0.5] = 1
+                    new_ypred = new_ypred.astype(int)
+                else:
+                    new_ypred = model.predict(new_xitest) #precit y_pred
                 new_ytrue = y_true[samples_GT_threshold.index] #get y_true (same index of xi_test) (y_true must be a array 1D in this case)
                 
                 #calc of ERROR METRICS (EX: RMSE) or correlation methods
@@ -464,16 +482,111 @@ class ApplicabilityDomain:
                 elif metric_avaliation == 'acc':
                     error_ = accuracy_score(y_true=new_ytrue, y_pred=new_ypred)
                 elif metric_avaliation == 'auc':
-                    new_yproba = model_sklearn.predict_proba(new_xitest)
-                    fp, tp, _ = roc_curve(new_ytrue, new_yproba[:, 1])
-                    error_ = auc(fp, tp)
+                    if isTensorflow:
+                        new_yproba = model.predict(new_xitest)
+                        fp, tp, _ = roc_curve(new_ytrue, new_yproba)
+                        error_ = auc(fp, tp)
+                    else:
+                        new_yproba = model.predict_proba(new_xitest)
+                        fp, tp, _ = roc_curve(new_ytrue, new_yproba[:, 1])
+                        error_ = auc(fp, tp)
                     
                 results['Threshold {}'.format(thresholds.round(5))] = [[error_],np.array(samples_LT_threshold.index)]
                 
             return results
         
-"""
-if __name__ == '__main__':
+
+# Teste Zone 1
+"""if __name__ == '__main__':
+    import pandas as pd
+    import numpy as np
+    from pyADA import Similarity, ApplicabilityDomain
+    import matplotlib.pyplot as plt
+
+    from sklearn.model_selection import train_test_split
+    from sklearn.metrics import (accuracy_score, matthews_corrcoef,
+                                 roc_curve, auc, hamming_loss, classification_report,
+                                 roc_auc_score)
+    
+    from tensorflow.keras.models import load_model
+    import os
+
+    def filter_data(df_new, colnames, filter_threshold = 2000, seed=0, balance_0s = True):
+        for i in colnames:
+            if i == colnames[0]:
+                old = df_new.loc[df_new[i] == 1]
+            else:
+                ocorr_new_in_old = len(old.loc[old[i] == 1])
+
+                if df_new[i].isin([1]).sum() <= filter_threshold:
+                    if ocorr_new_in_old == 0:
+                        new = df_new.loc[df_new[i] == 1]
+                        new = pd.concat([old, new], axis=0)
+                        old = new
+                    else:
+                        new = df_new.loc[df_new[i] == 1]
+                        new.drop(old.loc[old[i] == 1].index, inplace=True, axis = 0)
+                        new = pd.concat([old, new])
+                        old = new
+                else:            
+                    if ocorr_new_in_old >= filter_threshold:
+                        continue
+                    else:
+                        new = df_new.loc[df_new[i] == 1]
+                        new.drop(old.loc[old[i] == 1].index, axis=0, inplace=True)
+                        new = new.sample(filter_threshold - ocorr_new_in_old, random_state=seed)
+                        new = pd.concat([old, new])
+                        old = new
+                        
+        #ainda pegamos só 3 colunas, depois temos que deixar esse código a baixo geral (talvez usando pd.query)
+        if balance_0s:
+            get_all0 = df_new.loc[(df_new[colnames[0]] == 0) & (df_new[colnames[1]] == 0) & (df_new[colnames[2]] == 0)]
+            get_filt0 = get_all0.sample(filter_threshold//3, random_state=seed)
+            old = pd.concat([old, get_filt0], axis=0)
+            
+            
+        return old
+    
+    #Load data
+    path = '/data/banco_de_dados/AIRNmr/full_204FG.csv'
+    df = pd.read_csv(path)
+    togetY = [ 0, 1, 2, 3, 4, 8, 15, 18, 19, 23, 24, 25, 26, 27, 28, 29, 30, 31, 33, 34, 36, 37, 38, 40, 44, 46, 47, 48, 49, 50, 51, 52, 54, 55, 56, 60, 62, 63, 64, 65, 67, 68, 69, 70, 74, 75, 77, 78, 79, 81, 82, 83, 89, 98, 105, 112, 114, 124, 126, 132, 149, 160, 163, 165, 172, 198, 199, 200, 201]
+    y = df.iloc[:, 2403:].iloc[:, togetY]
+    df_new = pd.concat([df.iloc[:, :2403], y], axis=1)
+    #Load Models
+    path_models = '/dados/GoogleDrive/rotinas_python/AIRNmr/app/prenumars/models/'
+    models = {}
+    for i in os.listdir(path_models):
+        models[i] = path_models+i
+    model = load_model(models['model_FG27.h5'])
+    #Get correct fingerprints
+    fgs_names = ['FG-27', 'FG-4', 'FG-46']
+    df_filter = filter_data(df_new=df_new, colnames=fgs_names, filter_threshold=4385, balance_0s=False)
+    df_filter = df_filter.sample(len(df_filter), random_state=0)
+    #Prepare data
+    xi = df_filter.iloc[:, 3:2403].astype(int).values
+    y = df_filter.loc[:, ['FG-27']].values
+    new_xi = xi
+    column2add = np.zeros((len(xi),1)) #criando a coluna que vai ser adicionada à matriz
+    new_xi = np.append(new_xi, column2add, axis=1) #adicionando a coluna nova na matriz
+    xi49_49 = new_xi.reshape(len(new_xi), 49, 49)
+    xi49_49 = new_xi.reshape(len(new_xi), 49, 49, 1).astype(int)
+    #Train and test
+    xi_train, xi_test, y_train, y_test = train_test_split(xi49_49, y, test_size=0.2, random_state=487)
+    #AD
+    AD = ApplicabilityDomain(verbose=True)
+    get = AD.fit(model=model, isTensorflow=True,base_test=xi_test[:100], base_train=xi_train, y_true=y_test,
+            threshold_reference = 'max', threshold_step = (0, 1, 0.05),
+            similarity_metric='tanimoto', alpha = 1, beta = 1, metric_avaliation='mcc')"""
+
+    
+
+    
+
+
+
+# Teste Zone 2
+"""if __name__ == '__main__':
     
     from sklearn.ensemble import RandomForestRegressor
     from sklearn.ensemble import RandomForestClassifier
@@ -507,13 +620,17 @@ if __name__ == '__main__':
     xi_train, xi_test, y_train, y_test = train_test_split(xi, y, test_size=0.05, random_state=0)    
     rfc = RandomForestClassifier(n_estimators=100, n_jobs=10, random_state=0)
     rfc.fit(xi_train, y_train)
+    
 
     ad3 = ApplicabilityDomain(verbose=True)
-    get = ad3.fit(model_sklearn=rfc,base_test=xi_test, base_train=xi_train, y_true=y_test,
+    get = ad3.fit(model=rfc,base_test=xi_test, base_train=xi_train, y_true=y_test,
                   threshold_step=(0, 1, 0.1), threshold_reference='max',
-                  metric_avaliation='auc', similarity_metric='tanimoto', alpha=2, beta=1)
+                  metric_avaliation='auc', similarity_metric='tanimoto', alpha=1, beta=1)"""
+
+
+
     
-"""
+
 
 
 
