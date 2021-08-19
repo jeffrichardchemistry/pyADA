@@ -15,7 +15,7 @@ setup(
     long_description = description,
     long_description_content_type = "text/markdown",
     packages=['pyADA'],
-    install_requires=['pandas<=1.1.5', 'scipy<=1.5.4','numpy<=1.19.5', 'tqdm<=4.57.0', 'scikit-learn'],
+    install_requires=['pandas<=1.1.5', 'scipy<=1.5.4','numpy<=1.19.5', 'tqdm>=4.57.0', 'scikit-learn'],
 	classifiers = [
 		'Intended Audience :: Developers',
 		'Intended Audience :: Science/Research',
