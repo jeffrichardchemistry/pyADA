@@ -96,6 +96,29 @@ class Smetrics:
         q2int = 1 - ((sum((y_true - y_pred)**2)) / (sum((y_true - np.mean(y_true))**2)))
         return q2int
 
+    def kappaCalc(self, y_true, y_pred):
+        # Matrix confussion
+        true = np.array(y_true)
+        pred = np.array(y_pred)
+        true = pd.Series(true, name='True')
+        pred = pd.Series(pred, name='Predicted')
+        df_confusion = pd.crosstab(true, pred)
+        df_confusion
+
+        # sum diagonal
+        mat_confussion = np.array(df_confusion)
+        diagonal_sum = mat_confussion.diagonal().sum()
+
+        # Kappa equation
+        p0 = (diagonal_sum)/len(y_true) # the relative acceptance rate
+        pe = np.array([(mat_confussion[i,:].sum()*mat_confussion[:,i].sum())/(mat_confussion.sum()**2) for i in range(0,len(np.unique(y_true)))]).sum()
+        kappa = (p0 - pe)/(1 - pe)
+
+        # p-value
+
+
+        return kappa
+
 
 class Similarity:
     """
