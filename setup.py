@@ -5,7 +5,7 @@ with open("README.md", 'r') as fr:
 
 setup(
     name='pyADAqsar',
-    version='1.0.3',
+    version='1.0.4',
     url='https://github.com/jeffrichardchemistry/pyADA',
     license='GNU GPL',
     author='Jefferson Richard',
@@ -15,7 +15,7 @@ setup(
     long_description = description,
     long_description_content_type = "text/markdown",
     packages=['pyADA'],
-    install_requires=['pandas<=1.1.5', 'scipy<=1.5.4','numpy<=1.19.5', 'tqdm>=4.57.0', 'scikit-learn'],
+    install_requires=['pandas', 'scipy','numpy', 'tqdm', 'scikit-learn'],
 	classifiers = [
 		'Intended Audience :: Developers',
 		'Intended Audience :: Science/Research',
@@ -28,8 +28,5 @@ setup(
 		'Operating System :: Microsoft :: Windows',
 		'Operating System :: POSIX :: Linux',
 		'Environment :: MacOS X',
-		'Programming Language :: Python :: 3',
-		'Programming Language :: Python :: 3.6',
-		'Programming Language :: Python :: 3.7',
 		'Programming Language :: Python :: 3.8',]
 )
