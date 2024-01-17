@@ -1,1 +1,1 @@
-from .pyADA import Smetrics, Similarity, ApplicabilityDomain
+from .pyADA import Smetrics, Similarity, ApplicabilityDomain, LeverageAD
