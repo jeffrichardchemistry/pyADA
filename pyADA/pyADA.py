@@ -4,6 +4,8 @@ from math import sqrt
 import pandas as pd
 from tqdm import tqdm
 from sklearn.metrics import roc_curve, auc, matthews_corrcoef, accuracy_score
+import plotly.express as px
+import plotly.graph_objects as go
 
 class Smetrics:
     def __init__(self):
@@ -518,6 +520,131 @@ class ApplicabilityDomain:
                 
             return results
         
+class LeverageAD:
+    def __init__(self):
+        self._warning_leverage = None
+
+    def fit(self, X_train,X_target):
+        # ensure train descriptors matrix is float type
+        X_train = X_train.astype(float)
+        if not isinstance(X_target,pd.DataFrame):
+            X_target = pd.DataFrame(X_target)
+        # h value for each descriptor row in dataset is defined as hii = xi T(XTX)–1 xi
+        # calculate (XTX)–1
+        tranpX = np.transpose(X_train)
+        xtx = np.dot(tranpX, X_train)
+        invxtx = np.linalg.inv(xtx)
+    
+        leverages_target = []
+    
+        for idx, row in X_target.iterrows():
+            transposed_row = np.transpose(row)
+            leverage = np.dot(np.dot(row, invxtx), transposed_row)
+            leverages_target.append(leverage.round(4))
+    
+        p = X_train.shape[1] # number of columns (variables)
+        n = X_train.shape[0] # number of rows (samples)
+    
+        warning_leverage = 3*(p/n)
+        
+        inout = []
+        for value in leverages_target:
+            if value < warning_leverage:
+                inout.append('IN')
+            else:
+                inout.append('OUT')
+        
+        finalresult = {}
+        for k,(levvalues,levinout) in enumerate(zip(leverages_target,inout)):
+            finalresult[k] = [levvalues,levinout]
+
+        self._warning_leverage = warning_leverage
+        return finalresult
+
+    def plotLeverages(self, X_train,X_targets):        
+        #get training bulk data
+        bulk_train = self.fit(X_train,X_train)
+        threshold_train = self._warning_leverage
+        levsdf = pd.DataFrame(list(bulk_train.values()), columns=['Leverages', 'inout'])
+        levsdf['Data Type'] = ['Train' for i in range(levsdf.shape[0])]
+        
+        #get external data
+        bulk_predict = self.fit(X_train,X_targets)
+        levsdf_predict = pd.DataFrame(list(bulk_predict.values()), columns=['Leverages', 'inout'])
+        levsdf_predict['Data Type'] = ['Targets' for i in range(levsdf_predict.shape[0])]
+
+        dfinal = pd.concat([levsdf,levsdf_predict],axis=0).reset_index(drop=True)
+        #return dfinal
+        
+        fig = px.scatter(dfinal,  x=dfinal.index, y='Leverages', color="Data Type",symbol='Data Type')
+        fig.add_shape(
+            go.layout.Shape(
+                type="line",
+                x0=min(dfinal.index),
+                x1=dfinal.shape[0],
+                y0=threshold_train,  # Y-coordinate where you want to place the horizontal line
+                y1=threshold_train,  # Y-coordinate where you want to place the horizontal line
+                line=dict(color="red", width=2, dash="dashdot"),  # Adjust color, width, and dash style
+            )
+        )
+
+        fig.add_annotation(
+        text=f"Leverage threshold : {round(threshold_train,2)}",
+        xref="paper",  # Use 'paper' coordinates for x-axis
+        yref="y",  # Use 'y' coordinates for y-axis
+        x=min(dfinal.index),  # Adjust the x-position of the annotation
+        y=threshold_train+(threshold_train*0.60),
+        showarrow=False,  # Hide arrow
+        )
+        return fig
+
+    def molPlotLeverages(self, X_trainWithSmiles: pd.DataFrame,X_targetsWithSmiles:pd.DataFrame,smilesColName: str):
+        import molplotly
+
+        X_train = X_trainWithSmiles.copy().drop([smilesColName],axis=1)
+        X_targets = X_targetsWithSmiles.copy().drop([smilesColName],axis=1)
+        #get training bulk data
+        bulk_train = self.fit(X_train,X_train)
+        threshold_train = self._warning_leverage
+        levsdf = pd.DataFrame(list(bulk_train.values()), columns=['Leverages', 'inout'])
+        levsdf['Data Type'] = ['Train' for i in range(levsdf.shape[0])]
+        levsdf[smilesColName] = X_trainWithSmiles[smilesColName].values
+        
+        #get external data
+        bulk_predict = self.fit(X_train,X_targets)
+        levsdf_predict = pd.DataFrame(list(bulk_predict.values()), columns=['Leverages', 'inout'])
+        levsdf_predict['Data Type'] = ['Targets' for i in range(levsdf_predict.shape[0])]
+        levsdf_predict[smilesColName] = X_targetsWithSmiles[smilesColName].values
+        
+        dfinal = pd.concat([levsdf,levsdf_predict],axis=0).reset_index(drop=True)
+        #print(dfinal)
+        #return dfinal
+        
+        fig = px.scatter(dfinal,  x=dfinal.index, y='Leverages', color="Data Type",symbol='Data Type')
+        
+        fig.add_shape(
+            go.layout.Shape(
+                type="line",
+                x0=min(dfinal.index),
+                x1=dfinal.shape[0],
+                y0=threshold_train,  # Y-coordinate where you want to place the horizontal line
+                y1=threshold_train,  # Y-coordinate where you want to place the horizontal line
+                line=dict(color="red", width=2, dash="dashdot"),  # Adjust color, width, and dash style
+            )
+        )
+
+        fig.add_annotation(
+        text=f"Leverage threshold : {round(threshold_train,2)}",
+        xref="paper",  # Use 'paper' coordinates for x-axis
+        yref="y",  # Use 'y' coordinates for y-axis
+        x=min(dfinal.index),  # Adjust the x-position of the annotation
+        y=threshold_train+(threshold_train*0.60),
+        showarrow=False,  # Hide arrow
+        )
+
+        app = molplotly.add_molecules(fig=fig,df=dfinal,smiles_col=smilesColName,facet_col="Data Type")
+        
+        return app,dfinal
 
 # Teste Zone 1
 """if __name__ == '__main__':
