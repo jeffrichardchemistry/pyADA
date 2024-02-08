@@ -41,3 +41,31 @@ help(Smetrics)
 help(Similarity)
 help(ApplicabilityDomain)
 ```
+
+# How to cite
+- BibTex
+```
+@article{dias2023spectrafp,
+  title={SpectraFP: a new spectra-based descriptor to aid in cheminformatics, molecular characterization and search algorithm applications},
+  author={Dias-Silva, Jefferson R and Oliveira, Vitor M and Sanches-Neto, Fl{\'a}vio O and Wilhelms, Renan Z and J{\'u}nior, Luiz HK Queiroz},
+  journal={Physical Chemistry Chemical Physics},
+  volume={25},
+  number={27},
+  pages={18038--18047},
+  year={2023},
+  publisher={Royal Society of Chemistry}
+}
+```
+
+- Normal citation
+
+```
+Dias-Silva, J. R., Oliveira, V. M., Sanches-Neto, F. O., Wilhelms, R. Z., & Júnior, L. H. Q. (2023). SpectraFP: a new spectra-based descriptor to aid in cheminformatics, molecular characterization and search algorithm applications. Physical Chemistry Chemical Physics, 25(27), 18038-18047.
+```
+
+```
+DIAS-SILVA, Jefferson R. et al. SpectraFP: a new spectra-based descriptor to aid in cheminformatics, molecular characterization and search algorithm applications. Physical Chemistry Chemical Physics, v. 25, n. 27, p. 18038-18047, 2023.
+```
+
+```
+Dias-Silva, Jefferson R., et al. "SpectraFP: a new spectra-based descriptor to aid in cheminformatics, molecular characterization and search algorithm applications." Physical Chemistry Chemical Physics 25.27 (2023): 18038-18047.```
