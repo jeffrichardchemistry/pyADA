@@ -1,4 +1,4 @@
-[![DOI](https://zenodo.org/badge/340351316.svg)](https://zenodo.org/badge/latestdoi/340351316)
+[![DOI](https://zenodo.org/badge/340351316.svg)](https://zenodo.org/badge/latestdoi/340351316) [![PyPI version](https://img.shields.io/pypi/v/pyadaqsar)](https://pypi.python.org/pypi/pyadaqsar) [![PyPI Downloads](https://pepy.tech/badge/pyadaqsar)](https://pepy.tech/project/pyadaqsar)
 
 
 # pyADA
